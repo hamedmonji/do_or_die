@@ -187,9 +187,9 @@ class DataSource {
 
 class Task {
   final String name;
-  final CourseState completionStatus;
+  final taslState completionStatus;
 
-  Task(this.name, {this.completionStatus = CourseState.todo});
+  Task(this.name, {this.completionStatus = taslState.todo});
 }
 
 class PathData {
@@ -201,4 +201,4 @@ class PathData {
   }
 }
 
-enum CourseState { todo, inProgress, done }
+enum taslState { todo, inProgress, done }
