@@ -1,17 +1,24 @@
 import 'dart:ui';
 
+import 'package:do_or_die/data/database.dart';
+import 'package:do_or_die/data/models.dart';
 import 'package:flutter/material.dart';
 import 'package:do_or_die/path/path.dart';
 
-import 'colors.dart';
+import '../colors.dart';
 
 class Board extends StatefulWidget {
+  final BoardData board;
+
+  const Board({Key key, @required this.board}) : super(key: key);
   @override
-  _BoardState createState() => _BoardState();
+  _BoardState createState() => _BoardState(board);
 }
 
 class _BoardState extends State<Board> {
-  final List<PathData> paths = [];
+  final BoardData board;
+
+  _BoardState(this.board);
 
   @override
   Widget build(BuildContext context) {
@@ -20,35 +27,57 @@ class _BoardState extends State<Board> {
         decoration: BoxDecoration(
             image: DecorationImage(
                 image: AssetImage("images/background.jpg"), fit: BoxFit.cover)),
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              for (var path in paths)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Path(
-                    path: path,
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  for (var path in board.paths)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Path(
+                        path: path,
+                        taskToInProgress: (value) {
+                          setState(() {
+                            board.inProgress.tasks.add(value);
+                          });
+                        },
+                      ),
+                    ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    child: GestureDetector(
+                      onLongPress: () => _saveBoard(),
+                      child: NewPath(
+                        expanded: board.paths.isEmpty,
+                        pathCreated: (String newPath) {
+                          setState(() {
+                            board.paths.add(PathData(newPath));
+                          });
+                        },
+                      ),
+                    ),
                   ),
-                ),
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                child: NewPath(
-                  expanded: paths.isEmpty,
-                  pathCreated: (String newPath) {
-                    setState(() {
-                      paths.add(PathData(newPath));
-                    });
-                  },
-                ),
+                ],
               ),
-            ],
-          ),
+            ),
+            Spacer(),
+            InProgressPath(path: board.inProgress),
+            Spacer()
+          ],
         ),
       ),
     );
+  }
+
+  void _saveBoard() async {
+    print('save board');
+    updateBoard(board);
   }
 }
 

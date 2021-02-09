@@ -1,14 +1,16 @@
 import 'dart:math';
 import 'dart:ui';
 
+import 'package:do_or_die/data/models.dart';
 import 'package:flutter/material.dart';
 
 import '../colors.dart';
 
 class Path extends StatefulWidget {
   final PathData path;
-
-  const Path({Key key, @required this.path}) : super(key: key);
+  final ValueChanged<Task> taskToInProgress;
+  const Path({Key key, @required this.path, this.taskToInProgress})
+      : super(key: key);
 
   @override
   _PathState createState() => _PathState(path);
@@ -115,18 +117,54 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
                                 axisAlignment: 1,
                                 sizeFactor: animation,
                                 child: Padding(
-                                  padding: const EdgeInsets.only(left: 8.0),
+                                  padding: const EdgeInsets.only(
+                                      left: 4.0, right: 8),
                                   child: Center(
-                                    child: Container(
-                                      height: 60,
-                                      width: 60,
-                                      decoration: BoxDecoration(
-                                          color: Colors.primaries[
-                                              index % Colors.primaries.length],
-                                          borderRadius: BorderRadius.only(
-                                              topRight: Radius.circular(24),
-                                              bottomRight:
-                                                  Radius.circular(24))),
+                                    child: GestureDetector(
+                                      onTap: () {
+                                        widget.taskToInProgress(
+                                            path.tasks[index]);
+                                        path.tasks.removeAt(index);
+                                        listKey.currentState.removeItem(
+                                            index,
+                                            (context, animation) =>
+                                                SizeTransition(
+                                                  axis: Axis.horizontal,
+                                                  axisAlignment: 1,
+                                                  sizeFactor: animation,
+                                                  child: Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            4.0),
+                                                    child: Center(
+                                                      child: Container(
+                                                        height: 46,
+                                                        width: 46,
+                                                        decoration: BoxDecoration(
+                                                            color: Colors
+                                                                    .primaries[
+                                                                index %
+                                                                    Colors
+                                                                        .primaries
+                                                                        .length],
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        66)),
+                                                      ),
+                                                    ),
+                                                  ),
+                                                ));
+                                      },
+                                      child: Container(
+                                        height: 46,
+                                        width: 46,
+                                        decoration: BoxDecoration(
+                                            color: Colors.primaries[index %
+                                                Colors.primaries.length],
+                                            borderRadius:
+                                                BorderRadius.circular(66)),
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -180,25 +218,69 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
   }
 }
 
-class DataSource {
-  final List<PathData> paths = [];
-  List<PathData> getPaths() => paths;
-}
-
-class Task {
-  final String name;
-  final taslState completionStatus;
-
-  Task(this.name, {this.completionStatus = taslState.todo});
-}
-
-class PathData {
-  final String name;
-  List<Task> tasks;
-
-  PathData(this.name, {this.tasks}) {
-    if (tasks == null) tasks = [];
+class InProgressPath extends StatelessWidget {
+  final PathData path;
+  final GlobalKey<AnimatedListState> listKey = GlobalKey();
+  InProgressPath({Key key, @required this.path}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          constraints: BoxConstraints(maxHeight: 80, minWidth: 80),
+          clipBehavior: Clip.antiAlias,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              constraints: BoxConstraints(
+                  maxHeight: 84,
+                  minHeight: 84,
+                  minWidth: 84,
+                  maxWidth: path.tasks.isEmpty
+                      ? 84
+                      : 84 + (80 * path.tasks.length.toDouble())),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AnimatedList(
+                      key: listKey,
+                      reverse: true,
+                      itemBuilder: (context, index, animation) {
+                        return ScaleTransition(
+                          scale: animation,
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                              child: Container(
+                                height: 64,
+                                width: 64,
+                                decoration: BoxDecoration(
+                                    color: Colors.primaries[
+                                        index % Colors.primaries.length],
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(24))),
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      shrinkWrap: true,
+                      scrollDirection: Axis.horizontal,
+                      initialItemCount: path.tasks.length,
+                    )
+                  ],
+                ),
+              ),
+            ),
+          ),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(24))),
+        ),
+      ],
+    );
   }
 }
-
-enum taslState { todo, inProgress, done }
