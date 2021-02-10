@@ -3,6 +3,7 @@ import 'dart:ui';
 
 import 'package:do_or_die/data/models.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 import '../colors.dart';
 
@@ -170,21 +171,51 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
                                 ),
                               );
                             }
-                            return SizeTransition(
-                              axis: Axis.horizontal,
-                              axisAlignment: 1,
-                              sizeFactor: animation,
-                              child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: Center(
-                                  child: Container(
-                                    height: 46,
-                                    width: 46,
-                                    decoration: BoxDecoration(
-                                        color: Colors.primaries[
-                                            index % Colors.primaries.length],
-                                        borderRadius:
-                                            BorderRadius.circular(66)),
+                            return GestureDetector(
+                              onTap: () {
+                                widget.taskToInProgress(path.tasks[index]);
+                                path.tasks.removeAt(index);
+                                listKey.currentState.removeItem(
+                                    index,
+                                    (context, animation) => SizeTransition(
+                                          axis: Axis.horizontal,
+                                          axisAlignment: 1,
+                                          sizeFactor: animation,
+                                          child: Padding(
+                                            padding: const EdgeInsets.all(4.0),
+                                            child: Center(
+                                              child: Container(
+                                                height: 46,
+                                                width: 46,
+                                                decoration: BoxDecoration(
+                                                    color: Colors.primaries[
+                                                        index %
+                                                            Colors.primaries
+                                                                .length],
+                                                    borderRadius:
+                                                        BorderRadius.circular(
+                                                            66)),
+                                              ),
+                                            ),
+                                          ),
+                                        ));
+                              },
+                              child: SizeTransition(
+                                axis: Axis.horizontal,
+                                axisAlignment: 1,
+                                sizeFactor: animation,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: Center(
+                                    child: Container(
+                                      height: 46,
+                                      width: 46,
+                                      decoration: BoxDecoration(
+                                          color: Colors.primaries[
+                                              index % Colors.primaries.length],
+                                          borderRadius:
+                                              BorderRadius.circular(66)),
+                                    ),
                                   ),
                                 ),
                               ),
@@ -220,7 +251,9 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
 
 class InProgressPath extends StatelessWidget {
   final PathData path;
-  InProgressPath({Key key, @required this.path}) : super(key: key);
+  final ValueChanged<Task> onTaskTapped;
+  InProgressPath({Key key, @required this.path, this.onTaskTapped})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
     return LayoutBuilder(
@@ -281,17 +314,23 @@ class InProgressPath extends StatelessWidget {
                       itemCount: tasks.length,
                       reverse: true,
                       itemBuilder: (context, index) {
-                        return Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: Center(
-                            child: Container(
-                              height: 64,
-                              width: 64,
-                              decoration: BoxDecoration(
-                                  color: Colors.primaries[
-                                      index % Colors.primaries.length],
-                                  borderRadius:
-                                      BorderRadius.all(Radius.circular(24))),
+                        return GestureDetector(
+                          onTap: () {
+                            if (onTaskTapped != null)
+                              onTaskTapped(path.tasks[index]);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Center(
+                              child: Container(
+                                height: 64,
+                                width: 64,
+                                decoration: BoxDecoration(
+                                    color: Colors.primaries[
+                                        index % Colors.primaries.length],
+                                    borderRadius:
+                                        BorderRadius.all(Radius.circular(24))),
+                              ),
                             ),
                           ),
                         );
@@ -308,6 +347,71 @@ class InProgressPath extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(24))),
         ),
       ],
+    );
+  }
+}
+
+class ScrollablePath extends StatelessWidget {
+  final PathData path;
+  final ValueChanged<Task> onTaskTapped;
+  final ScrollController _controller = ScrollController();
+
+  ScrollablePath({Key key, @required this.path, this.onTaskTapped})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _controller.jumpTo(_controller.position.maxScrollExtent);
+    });
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Container(
+          clipBehavior: Clip.antiAlias,
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+            child: AnimatedContainer(
+              duration: Duration(milliseconds: 300),
+              constraints: BoxConstraints(
+                  maxHeight: max(54 * (path.tasks.length.toDouble() + 1), 54)),
+              decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
+              child: Align(
+                alignment: Alignment.topCenter,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: path.tasks.length,
+                  controller: _controller,
+                  itemBuilder: (context, index) {
+                    return GestureDetector(
+                      onTap: () {
+                        if (onTaskTapped != null)
+                          onTaskTapped(path.tasks[index]);
+                      },
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: Center(
+                          child: Container(
+                            height: 46,
+                            width: 46,
+                            decoration: BoxDecoration(
+                                color: Colors
+                                    .primaries[index % Colors.primaries.length],
+                                borderRadius:
+                                    BorderRadius.all(Radius.circular(24))),
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                  scrollDirection: Axis.vertical,
+                ),
+              ),
+            ),
+          ),
+          decoration: BoxDecoration(
+              borderRadius: BorderRadius.all(Radius.circular(24))),
+        );
+      },
     );
   }
 }
