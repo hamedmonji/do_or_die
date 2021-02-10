@@ -220,57 +220,84 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
 
 class InProgressPath extends StatelessWidget {
   final PathData path;
-  final GlobalKey<AnimatedListState> listKey = GlobalKey();
   InProgressPath({Key key, @required this.path}) : super(key: key);
   @override
   Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final sublistCount = path.tasks.length == 0
+            ? 1
+            : ((path.tasks.length + 1) / (constraints.maxWidth / 80)).ceil();
+        print(sublistCount);
+        return Center(
+          child: ListView.builder(
+            itemCount: sublistCount,
+            shrinkWrap: true,
+            itemBuilder: (context, index) {
+              final eachPartialitmeCount = constraints.maxWidth ~/ 80;
+              return Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4.0),
+                child: _buildPartialPath(
+                    constraints,
+                    path.tasks.sublist(
+                        index * eachPartialitmeCount,
+                        min((index + 1) * eachPartialitmeCount,
+                            path.tasks.length))),
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildPartialPath(BoxConstraints constraints, List<Task> tasks) {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
         Container(
-          constraints: BoxConstraints(maxHeight: 80, minWidth: 80),
+          constraints: BoxConstraints(maxHeight: 84, minWidth: 80),
           clipBehavior: Clip.antiAlias,
           child: BackdropFilter(
             filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
             child: AnimatedContainer(
               duration: Duration(milliseconds: 300),
               constraints: BoxConstraints(
-                  maxHeight: 84,
                   minHeight: 84,
+                  maxHeight: 84,
                   minWidth: 84,
-                  maxWidth: path.tasks.isEmpty
-                      ? 84
-                      : 84 + (80 * path.tasks.length.toDouble())),
+                  maxWidth: min(
+                      constraints.maxWidth,
+                      tasks.isEmpty
+                          ? 84
+                          : 84 + (80 * tasks.length.toDouble()))),
               decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
               child: Align(
                 alignment: Alignment.centerRight,
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    AnimatedList(
-                      key: listKey,
+                    ListView.builder(
+                      itemCount: tasks.length,
                       reverse: true,
-                      itemBuilder: (context, index, animation) {
-                        return ScaleTransition(
-                          scale: animation,
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Center(
-                              child: Container(
-                                height: 64,
-                                width: 64,
-                                decoration: BoxDecoration(
-                                    color: Colors.primaries[
-                                        index % Colors.primaries.length],
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(24))),
-                              ),
+                      itemBuilder: (context, index) {
+                        return Padding(
+                          padding: const EdgeInsets.all(8.0),
+                          child: Center(
+                            child: Container(
+                              height: 64,
+                              width: 64,
+                              decoration: BoxDecoration(
+                                  color: Colors.primaries[
+                                      index % Colors.primaries.length],
+                                  borderRadius:
+                                      BorderRadius.all(Radius.circular(24))),
                             ),
                           ),
                         );
                       },
                       shrinkWrap: true,
                       scrollDirection: Axis.horizontal,
-                      initialItemCount: path.tasks.length,
                     )
                   ],
                 ),
