@@ -364,63 +364,82 @@ class ScrollablePath extends StatelessWidget {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       _controller.jumpTo(_controller.position.maxScrollExtent);
     });
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return Container(
-          clipBehavior: Clip.antiAlias,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              constraints: BoxConstraints(
-                  maxHeight: max(54 * (path.tasks.length.toDouble() + 1), 54)),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: ListView.builder(
-                  shrinkWrap: true,
-                  itemCount: path.tasks.length,
-                  controller: _controller,
-                  itemBuilder: (context, index) {
-                    return GestureDetector(
-                      onTap: () {
-                        if (onTaskTapped != null)
-                          onTaskTapped(path.tasks[index]);
-                      },
-                      child: Padding(
-                        padding: const EdgeInsets.all(4.0),
-                        child: CircleTaskView(
-                          color:
-                              Colors.primaries[index % Colors.primaries.length],
-                        ),
-                      ),
-                    );
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
+        child: AnimatedContainer(
+          duration: Duration(milliseconds: 300),
+          constraints: BoxConstraints(
+              maxHeight: max(54 * (path.tasks.length.toDouble() + 1), 54)),
+          decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
+          child: Align(
+            alignment: Alignment.topCenter,
+            child: ListView.builder(
+              itemCount: path.tasks.length,
+              controller: _controller,
+              itemBuilder: (context, index) {
+                return GestureDetector(
+                  onTap: () {
+                    if (onTaskTapped != null) onTaskTapped(path.tasks[index]);
                   },
-                  scrollDirection: Axis.vertical,
-                ),
-              ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4.0),
+                    child: CircleTaskView(
+                      task: path.tasks[index],
+                      color: Colors.primaries[index % Colors.primaries.length],
+                    ),
+                  ),
+                );
+              },
+              scrollDirection: Axis.vertical,
             ),
           ),
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(24))),
-        );
-      },
+        ),
+      ),
+      decoration:
+          BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(24))),
+    );
+  }
+}
+
+class TitleTaskView extends StatelessWidget {
+  final Task task;
+  final Color color;
+
+  const TitleTaskView({Key key, this.task, this.color}) : super(key: key);
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+          color: color, borderRadius: BorderRadius.all(Radius.circular(24))),
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Text(task.name),
+      ),
     );
   }
 }
 
 class CircleTaskView extends StatelessWidget {
   final Color color;
-  const CircleTaskView({Key key, this.color}) : super(key: key);
+  final Task task;
+
+  const CircleTaskView({Key key, @required this.task, this.color})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Container(
-        height: 46,
-        width: 46,
-        decoration: BoxDecoration(
-            color: color, borderRadius: BorderRadius.all(Radius.circular(24))),
+    return MouseRegion(
+      onEnter: (event) {},
+      child: Center(
+        child: Container(
+          height: 46,
+          width: 46,
+          decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.all(Radius.circular(24))),
+        ),
       ),
     );
   }
