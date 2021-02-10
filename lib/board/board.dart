@@ -87,6 +87,7 @@ class _BoardState extends State<Board> {
                           path: board.inProgress,
                           onTaskTapped: (value) {
                             setState(() {
+                              board.inProgress.tasks.remove(value);
                               board.done.tasks.add(value);
                             });
                           },
@@ -100,9 +101,11 @@ class _BoardState extends State<Board> {
                         constraints: BoxConstraints(maxWidth: 64),
                         child: Align(
                           alignment: Alignment.centerRight,
-                          child: RotatedBox(
-                              quarterTurns: 0,
-                              child: ScrollablePath(path: board.done)),
+                          child: Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: 64, right: 8),
+                            child: ScrollablePath(path: board.done),
+                          ),
                         )))
               ],
             );
