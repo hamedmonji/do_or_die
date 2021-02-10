@@ -1,4 +1,3 @@
-import 'dart:math';
 import 'dart:ui';
 
 import 'package:do_or_die/data/database.dart';
@@ -79,21 +78,32 @@ class _BoardState extends State<Board> {
                 AnimatedPositioned(
                     top: 0,
                     bottom: 0,
-                    left: max(
-                        constraints.maxWidth / 3,
-                        constraints.maxWidth / 2 -
-                            (board.inProgress.tasks.isEmpty
-                                ? 84
-                                : 84 +
-                                    (80 *
-                                            board.inProgress.tasks.length
-                                                .toDouble()) /
-                                        2)),
+                    left: constraints.maxWidth / 3,
                     duration: Duration(milliseconds: 300),
                     child: Container(
                         constraints:
                             BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                        child: InProgressPath(path: board.inProgress)))
+                        child: InProgressPath(
+                          path: board.inProgress,
+                          onTaskTapped: (value) {
+                            setState(() {
+                              board.done.tasks.add(value);
+                            });
+                          },
+                        ))),
+                AnimatedPositioned(
+                    top: 0,
+                    bottom: 0,
+                    right: 0,
+                    duration: Duration(milliseconds: 300),
+                    child: Container(
+                        constraints: BoxConstraints(maxWidth: 64),
+                        child: Align(
+                          alignment: Alignment.centerRight,
+                          child: RotatedBox(
+                              quarterTurns: 0,
+                              child: ScrollablePath(path: board.done)),
+                        )))
               ],
             );
           },
