@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:do_or_die/data/database.dart';
@@ -27,49 +28,75 @@ class _BoardState extends State<Board> {
         decoration: BoxDecoration(
             image: DecorationImage(
                 image: AssetImage("images/background.jpg"), fit: BoxFit.cover)),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Align(
-              alignment: Alignment.centerLeft,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (var path in board.paths)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8.0),
-                      child: Path(
-                        path: path,
-                        taskToInProgress: (value) {
-                          setState(() {
-                            board.inProgress.tasks.add(value);
-                          });
-                        },
-                      ),
-                    ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    child: GestureDetector(
-                      onLongPress: () => _saveBoard(),
-                      child: NewPath(
-                        expanded: board.paths.isEmpty,
-                        pathCreated: (String newPath) {
-                          setState(() {
-                            board.paths.add(PathData(newPath));
-                          });
-                        },
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Positioned(
+                  top: board.paths.length.toDouble() * 40,
+                  left: 0,
+                  child: Container(
+                    constraints: constraints
+                      ..constrainWidth(constraints.maxWidth / 3),
+                    child: Align(
+                      alignment: Alignment.centerLeft,
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          for (var path in board.paths)
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 8.0),
+                              child: Path(
+                                path: path,
+                                taskToInProgress: (value) {
+                                  setState(() {
+                                    board.inProgress.tasks.add(value);
+                                  });
+                                },
+                              ),
+                            ),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            child: GestureDetector(
+                              onLongPress: () => _saveBoard(),
+                              child: NewPath(
+                                expanded: board.paths.isEmpty,
+                                pathCreated: (String newPath) {
+                                  setState(() {
+                                    board.paths.add(PathData(newPath));
+                                  });
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
                     ),
                   ),
-                ],
-              ),
-            ),
-            Spacer(),
-            InProgressPath(path: board.inProgress),
-            Spacer()
-          ],
+                ),
+                AnimatedPositioned(
+                    top: 0,
+                    bottom: 0,
+                    left: max(
+                        constraints.maxWidth / 3,
+                        constraints.maxWidth / 2 -
+                            (board.inProgress.tasks.isEmpty
+                                ? 84
+                                : 84 +
+                                    (80 *
+                                            board.inProgress.tasks.length
+                                                .toDouble()) /
+                                        2)),
+                    duration: Duration(milliseconds: 300),
+                    child: Container(
+                        constraints:
+                            BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                        child: InProgressPath(path: board.inProgress)))
+              ],
+            );
+          },
         ),
       ),
     );
