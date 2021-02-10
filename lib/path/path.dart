@@ -389,16 +389,9 @@ class ScrollablePath extends StatelessWidget {
                       },
                       child: Padding(
                         padding: const EdgeInsets.all(4.0),
-                        child: Center(
-                          child: Container(
-                            height: 46,
-                            width: 46,
-                            decoration: BoxDecoration(
-                                color: Colors
-                                    .primaries[index % Colors.primaries.length],
-                                borderRadius:
-                                    BorderRadius.all(Radius.circular(24))),
-                          ),
+                        child: CircleTaskView(
+                          color:
+                              Colors.primaries[index % Colors.primaries.length],
                         ),
                       ),
                     );
@@ -412,6 +405,23 @@ class ScrollablePath extends StatelessWidget {
               borderRadius: BorderRadius.all(Radius.circular(24))),
         );
       },
+    );
+  }
+}
+
+class CircleTaskView extends StatelessWidget {
+  final Color color;
+  const CircleTaskView({Key key, this.color}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Container(
+        height: 46,
+        width: 46,
+        decoration: BoxDecoration(
+            color: color, borderRadius: BorderRadius.all(Radius.circular(24))),
+      ),
     );
   }
 }
