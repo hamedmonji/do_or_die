@@ -10,7 +10,12 @@ import '../colors.dart';
 class Path extends StatefulWidget {
   final PathData path;
   final ValueChanged<Task> taskToInProgress;
-  const Path({Key key, @required this.path, this.taskToInProgress})
+  final Widget Function(BuildContext context, Task taks, int index) builder;
+  const Path(
+      {Key key,
+      @required this.path,
+      this.taskToInProgress,
+      @required this.builder})
       : super(key: key);
 
   @override
@@ -206,17 +211,8 @@ class _PathState extends State<Path> with SingleTickerProviderStateMixin {
                                 sizeFactor: animation,
                                 child: Padding(
                                   padding: const EdgeInsets.all(4.0),
-                                  child: Center(
-                                    child: Container(
-                                      height: 46,
-                                      width: 46,
-                                      decoration: BoxDecoration(
-                                          color: Colors.primaries[
-                                              index % Colors.primaries.length],
-                                          borderRadius:
-                                              BorderRadius.circular(66)),
-                                    ),
-                                  ),
+                                  child: widget.builder(
+                                      context, path.tasks[index], index),
                                 ),
                               ),
                             );

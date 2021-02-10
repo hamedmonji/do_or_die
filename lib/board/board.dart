@@ -54,6 +54,16 @@ class _BoardState extends State<Board> {
                                     board.inProgress.tasks.add(value);
                                   });
                                 },
+                                builder: (context, task, index) {
+                                  return RotatedBox(
+                                    quarterTurns: 3,
+                                    child: CircleTaskView(
+                                      task: path.tasks[index],
+                                      color: Colors.primaries[
+                                          index % Colors.primaries.length],
+                                    ),
+                                  );
+                                },
                               ),
                             ),
                           Padding(
@@ -106,7 +116,21 @@ class _BoardState extends State<Board> {
                                 const EdgeInsets.only(bottom: 64, right: 8),
                             child: ScrollablePath(path: board.done),
                           ),
-                        )))
+                        ))),
+                Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Align(
+                      alignment: Alignment.bottomRight,
+                      child: Padding(
+                        padding: const EdgeInsets.only(bottom: 32, right: 32),
+                        child: Text(
+                          "task title",
+                          style: TextStyle(color: Colors.black, fontSize: 16),
+                        ),
+                      ),
+                    ))
               ],
             );
           },
