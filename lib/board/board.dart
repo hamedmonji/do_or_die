@@ -23,118 +23,41 @@ class _BoardState extends State<Board> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-            image: DecorationImage(
-                image: AssetImage("images/background.jpg"), fit: BoxFit.cover)),
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            return Stack(
-              children: [
-                Positioned(
-                  top: board.paths.length.toDouble() * 40,
-                  left: 0,
-                  child: Container(
-                    constraints: constraints
-                      ..constrainWidth(constraints.maxWidth / 3),
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          for (var path in board.paths)
-                            Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(vertical: 8.0),
-                              child: Path(
-                                path: path,
-                                taskToInProgress: (value) {
-                                  setState(() {
-                                    board.inProgress.tasks.add(value);
-                                  });
-                                },
-                                builder: (context, task, index) {
-                                  return RotatedBox(
-                                    quarterTurns: 3,
-                                    child: CircleTaskView(
-                                      task: path.tasks[index],
-                                      color: Colors.primaries[
-                                          index % Colors.primaries.length],
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            child: GestureDetector(
-                              onLongPress: () => _saveBoard(),
-                              child: NewPath(
-                                expanded: board.paths.isEmpty,
-                                pathCreated: (String newPath) {
-                                  setState(() {
-                                    board.paths.add(PathData(newPath));
-                                  });
-                                },
-                              ),
-                            ),
-                          ),
-                        ],
+      body: Stack(
+        children: [
+          Container(
+            decoration: BoxDecoration(
+                image: DecorationImage(
+                    image: AssetImage("images/background.jpg"),
+                    fit: BoxFit.cover)),
+          ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: Container(
+              constraints: BoxConstraints(maxWidth: 300),
+              child: MutablePath(
+                path: board.paths.first,
+                builder: (context, taks, index) {
+                  return RotatedBox(
+                    quarterTurns: 3,
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: TitleTaskView(
+                        task: taks,
+                        color: Colors.pink,
                       ),
                     ),
-                  ),
-                ),
-                AnimatedPositioned(
-                    top: 0,
-                    bottom: 0,
-                    left: constraints.maxWidth / 3,
-                    duration: Duration(milliseconds: 300),
-                    child: Container(
-                        constraints:
-                            BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                        child: InProgressPath(
-                          path: board.inProgress,
-                          onTaskTapped: (value) {
-                            setState(() {
-                              board.inProgress.tasks.remove(value);
-                              board.done.tasks.add(value);
-                            });
-                          },
-                        ))),
-                AnimatedPositioned(
-                    top: 0,
-                    bottom: 0,
-                    right: 0,
-                    duration: Duration(milliseconds: 300),
-                    child: Container(
-                        constraints: BoxConstraints(maxWidth: 64),
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Padding(
-                            padding:
-                                const EdgeInsets.only(bottom: 64, right: 8),
-                            child: ScrollablePath(path: board.done),
-                          ),
-                        ))),
-                Positioned(
-                    bottom: 0,
-                    left: 0,
-                    right: 0,
-                    child: Align(
-                      alignment: Alignment.bottomRight,
-                      child: Padding(
-                        padding: const EdgeInsets.only(bottom: 32, right: 32),
-                        child: Text(
-                          "task title",
-                          style: TextStyle(color: Colors.black, fontSize: 16),
-                        ),
-                      ),
-                    ))
-              ],
-            );
-          },
-        ),
+                  );
+                },
+                onTaskCreated: (Task value) {
+                  setState(() {
+                    board.paths.first.tasks.add(value);
+                  });
+                },
+              ),
+            ),
+          )
+        ],
       ),
     );
   }
