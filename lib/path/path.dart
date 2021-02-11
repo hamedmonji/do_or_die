@@ -8,10 +8,13 @@ import 'package:do_or_die/widgets/wrap_list.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
+typedef TaskBuilder = Widget Function(
+    BuildContext context, Task task, int index);
+
 class MutablePath extends StatefulWidget {
   final PathData path;
   final ValueChanged<Task> onTaskCreated;
-  final Widget Function(BuildContext context, Task taks, int index) builder;
+  final TaskBuilder builder;
   const MutablePath(
       {Key key,
       @required this.path,
@@ -35,9 +38,10 @@ class _MutablePathState extends State<MutablePath>
       clipBehavior: Clip.antiAlias,
       child: Blur(
         child: Container(
-          child: WrapList(
+          child: HorizontalWrapList(
               leading: Padding(
-                padding: const EdgeInsets.only(left: 12.0, right: 8),
+                padding: const EdgeInsets.only(
+                    left: 12.0, right: 8, top: 8, bottom: 8),
                 child: Center(
                   child: MorphInput(
                     style: TextStyle(fontSize: 14),
@@ -71,10 +75,15 @@ class _MutablePathState extends State<MutablePath>
   }
 }
 
-class InProgressPath extends StatelessWidget {
+class StackedPath extends StatelessWidget {
   final PathData path;
-  final ValueChanged<Task> onTaskTapped;
-  InProgressPath({Key key, @required this.path, this.onTaskTapped})
+  final TaskBuilder builder;
+  final double maxWidth;
+  StackedPath(
+      {Key key,
+      @required this.path,
+      @required this.builder,
+      this.maxWidth = 80})
       : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -84,91 +93,34 @@ class InProgressPath extends StatelessWidget {
             ? 1
             : ((path.tasks.length + 1) / (constraints.maxWidth / 80)).ceil();
         print(sublistCount);
-        return Center(
-          child: ListView.builder(
-            itemCount: sublistCount,
-            shrinkWrap: true,
-            itemBuilder: (context, index) {
-              final eachPartialitmeCount = constraints.maxWidth ~/ 80;
-              return Padding(
-                padding: const EdgeInsets.symmetric(vertical: 4.0),
-                child: _buildPartialPath(
-                    constraints,
-                    path.tasks.sublist(
-                        index * eachPartialitmeCount,
-                        min((index + 1) * eachPartialitmeCount,
-                            path.tasks.length))),
-              );
-            },
-          ),
-        );
+        final eachPartialitmeCount = constraints.maxWidth ~/ maxWidth;
+
+        final lists = Iterable<int>.generate(sublistCount)
+            .toList()
+            .asMap()
+            .entries
+            .map((e) {
+          final index = e.key;
+          return Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: _buildPartialPath(
+                constraints,
+                path.tasks.sublist(
+                    index * eachPartialitmeCount,
+                    min((index + 1) * eachPartialitmeCount,
+                        path.tasks.length))),
+          );
+        }).toList();
+
+        return IntrinsicWidth(child: VerticalWrapList(children: lists));
       },
     );
   }
 
   Widget _buildPartialPath(BoxConstraints constraints, List<Task> tasks) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Container(
-          constraints: BoxConstraints(maxHeight: 84, minWidth: 80),
-          clipBehavior: Clip.antiAlias,
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
-            child: AnimatedContainer(
-              duration: Duration(milliseconds: 300),
-              constraints: BoxConstraints(
-                  minHeight: 84,
-                  maxHeight: 84,
-                  minWidth: 84,
-                  maxWidth: min(
-                      constraints.maxWidth,
-                      tasks.isEmpty
-                          ? 84
-                          : 84 + (80 * tasks.length.toDouble()))),
-              decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
-              child: Align(
-                alignment: Alignment.centerRight,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ListView.builder(
-                      itemCount: tasks.length,
-                      reverse: true,
-                      itemBuilder: (context, index) {
-                        return GestureDetector(
-                          onTap: () {
-                            if (onTaskTapped != null)
-                              onTaskTapped(path.tasks[index]);
-                          },
-                          child: Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: Center(
-                              child: Container(
-                                height: 64,
-                                width: 64,
-                                decoration: BoxDecoration(
-                                    color: Colors.primaries[
-                                        index % Colors.primaries.length],
-                                    borderRadius:
-                                        BorderRadius.all(Radius.circular(24))),
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                      shrinkWrap: true,
-                      scrollDirection: Axis.horizontal,
-                    )
-                  ],
-                ),
-              ),
-            ),
-          ),
-          decoration: BoxDecoration(
-              borderRadius: BorderRadius.all(Radius.circular(24))),
-        ),
-      ],
+    return IntrinsicWidth(
+      child: ScrollablePath(
+          path: PathData(path.name, tasks: tasks), builder: builder),
     );
   }
 }
@@ -176,9 +128,11 @@ class InProgressPath extends StatelessWidget {
 class ScrollablePath extends StatelessWidget {
   final PathData path;
   final ValueChanged<Task> onTaskTapped;
+  final TaskBuilder builder;
   final ScrollController _controller = ScrollController();
 
-  ScrollablePath({Key key, @required this.path, this.onTaskTapped})
+  ScrollablePath(
+      {Key key, @required this.path, this.onTaskTapped, @required this.builder})
       : super(key: key);
 
   @override
@@ -188,37 +142,14 @@ class ScrollablePath extends StatelessWidget {
     });
     return Container(
       clipBehavior: Clip.antiAlias,
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 4.0, sigmaY: 4.0),
-        child: AnimatedContainer(
-          duration: Duration(milliseconds: 300),
-          constraints: BoxConstraints(
-              maxHeight: max(54 * (path.tasks.length.toDouble() + 1), 54)),
-          decoration: BoxDecoration(color: Colors.white.withOpacity(0.4)),
-          child: Align(
-            alignment: Alignment.topCenter,
-            child: ListView.builder(
-              itemCount: path.tasks.length,
-              controller: _controller,
-              itemBuilder: (context, index) {
-                return GestureDetector(
-                  onTap: () {
-                    if (onTaskTapped != null) onTaskTapped(path.tasks[index]);
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(4.0),
-                    child: CircleTaskView(
-                      task: path.tasks[index],
-                      color: Colors.primaries[index % Colors.primaries.length],
-                    ),
-                  ),
-                );
-              },
-              scrollDirection: Axis.vertical,
-            ),
-          ),
-        ),
-      ),
+      child: Blur(
+          child: HorizontalWrapList(
+        children: path.tasks.asMap().entries.map((e) {
+          final index = e.key;
+          final task = e.value;
+          return builder(context, task, index);
+        }).toList(),
+      )),
       decoration:
           BoxDecoration(borderRadius: BorderRadius.all(Radius.circular(24))),
     );
@@ -258,6 +189,30 @@ class CircleTaskView extends StatelessWidget {
         child: Container(
           height: 46,
           width: 46,
+          decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.all(Radius.circular(24))),
+        ),
+      ),
+    );
+  }
+}
+
+class CubeTaskView extends StatelessWidget {
+  final Color color;
+  final Task task;
+
+  const CubeTaskView({Key key, @required this.task, this.color})
+      : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return MouseRegion(
+      onEnter: (event) {},
+      child: Center(
+        child: Container(
+          height: 64,
+          width: 64,
           decoration: BoxDecoration(
               color: color,
               borderRadius: BorderRadius.all(Radius.circular(24))),

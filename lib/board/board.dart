@@ -23,41 +23,138 @@ class _BoardState extends State<Board> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-                image: DecorationImage(
-                    image: AssetImage("images/background.jpg"),
-                    fit: BoxFit.cover)),
-          ),
-          Align(
-            alignment: Alignment.centerLeft,
-            child: Container(
-              constraints: BoxConstraints(maxWidth: 300),
-              child: MutablePath(
-                path: board.paths.first,
-                builder: (context, taks, index) {
-                  return RotatedBox(
-                    quarterTurns: 3,
-                    child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: TitleTaskView(
-                        task: taks,
-                        color: Colors.pink,
-                      ),
-                    ),
-                  );
-                },
-                onTaskCreated: (Task value) {
-                  setState(() {
-                    board.paths.first.tasks.add(value);
-                  });
-                },
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return Stack(
+            children: [
+              Container(
+                decoration: BoxDecoration(
+                    image: DecorationImage(
+                        image: AssetImage("images/background.jpg"),
+                        fit: BoxFit.cover)),
               ),
-            ),
-          )
-        ],
+              Container(
+                constraints:
+                    constraints.copyWith(maxWidth: constraints.maxWidth / 3),
+                child: IntrinsicWidth(
+                  child: Align(
+                    alignment: Alignment.centerLeft,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        for (var path in board.paths)
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: MutablePath(
+                              path: path,
+                              builder: (context, taks, index) {
+                                return GestureDetector(
+                                  child: RotatedBox(
+                                    quarterTurns: 3,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(4.0),
+                                      child: TitleTaskView(
+                                        task: taks,
+                                        color: Colors.pink,
+                                      ),
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    setState(() {
+                                      path.tasks.remove(taks);
+                                      board.inProgress.tasks.add(taks);
+                                    });
+                                  },
+                                );
+                              },
+                              onTaskCreated: (Task value) {
+                                setState(() {
+                                  path.tasks.add(value);
+                                });
+                              },
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Align(
+                  alignment: Alignment.center,
+                  child: Container(
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                      child: StackedPath(
+                        path: board.inProgress,
+                        builder: (BuildContext context, Task task, int index) {
+                          return GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                board.inProgress.tasks.remove(task);
+                                board.done.tasks.add(task);
+                              });
+                            },
+                            child: Padding(
+                                padding: const EdgeInsets.all(4.0),
+                                child: RotatedBox(
+                                  quarterTurns: 1,
+                                  child: CubeTaskView(
+                                    task: task,
+                                    color: Colors.primaries[
+                                        index % Colors.primaries.length],
+                                  ),
+                                )),
+                          );
+                        },
+                      )),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: IntrinsicHeight(
+                    child: Container(
+                        constraints:
+                            BoxConstraints(maxWidth: constraints.maxWidth / 3),
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: ScrollablePath(
+                            path: board.done,
+                            onTaskTapped: (value) {},
+                            builder:
+                                (BuildContext context, Task task, int index) {
+                              return GestureDetector(
+                                onTap: () {},
+                                child: Padding(
+                                  padding: const EdgeInsets.all(4.0),
+                                  child: CircleTaskView(
+                                    task: task,
+                                    color: Colors.primaries[
+                                        index % Colors.primaries.length],
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )),
+                  ),
+                ),
+              ),
+              Align(
+                alignment: Alignment.bottomLeft,
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 32.0),
+                  child: NewPath(
+                    pathCreated: (value) {},
+                  ),
+                ),
+              )
+            ],
+          );
+        },
       ),
     );
   }
