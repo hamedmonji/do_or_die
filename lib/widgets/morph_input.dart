@@ -8,6 +8,8 @@ class MorphInput extends StatefulWidget {
   final String inputHint;
   final Color color;
   final Color expandedColor;
+  final bool persitent;
+
   const MorphInput({
     Key key,
     @required this.style,
@@ -15,6 +17,7 @@ class MorphInput extends StatefulWidget {
     @required this.inputHint,
     this.color = Colors.pink,
     this.expandedColor = Colors.black,
+    this.persitent = false,
   }) : super(key: key);
 
   final TextStyle style;
@@ -28,7 +31,7 @@ class _MorphInputState extends State<MorphInput> {
   final FocusNode focusNode = FocusNode();
   double itemSize = 100;
   double initialSize;
-
+  final TextEditingController inputController = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -58,6 +61,7 @@ class _MorphInputState extends State<MorphInput> {
                 child: Center(
                   child: TextField(
                     focusNode: focusNode,
+                    controller: inputController,
                     decoration: InputDecoration(
                       border: InputBorder.none,
                       hintText: widget.inputHint,
@@ -69,6 +73,10 @@ class _MorphInputState extends State<MorphInput> {
                     },
                     onSubmitted: (value) {
                       widget.onSubmit(value);
+                      if (widget.persitent && value.isNotEmpty) {
+                        inputController.clear();
+                        return;
+                      }
                       setState(() {
                         _expanded = false;
                       });
