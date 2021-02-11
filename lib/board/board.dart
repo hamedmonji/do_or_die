@@ -33,128 +33,140 @@ class _BoardState extends State<Board> {
                         image: AssetImage("images/background.jpg"),
                         fit: BoxFit.cover)),
               ),
-              Container(
-                constraints:
-                    constraints.copyWith(maxWidth: constraints.maxWidth / 3),
-                child: IntrinsicWidth(
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        for (var path in board.paths)
-                          Align(
-                            alignment: Alignment.centerLeft,
-                            child: MutablePath(
-                              path: path,
-                              builder: (context, taks, index) {
-                                return GestureDetector(
-                                  child: RotatedBox(
-                                    quarterTurns: 3,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(4.0),
-                                      child: TitleTaskView(
-                                        task: taks,
-                                        color: Colors.pink,
-                                      ),
-                                    ),
-                                  ),
-                                  onTap: () {
-                                    setState(() {
-                                      path.tasks.remove(taks);
-                                      board.inProgress.tasks.add(taks);
-                                    });
-                                  },
-                                );
-                              },
-                              onTaskCreated: (Task value) {
-                                setState(() {
-                                  path.tasks.add(value);
-                                });
-                              },
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Align(
-                  alignment: Alignment.center,
-                  child: Container(
-                      constraints:
-                          BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                      child: StackedPath(
-                        path: board.inProgress,
-                        builder: (BuildContext context, Task task, int index) {
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                board.inProgress.tasks.remove(task);
-                                board.done.tasks.add(task);
-                              });
-                            },
-                            child: Padding(
-                                padding: const EdgeInsets.all(4.0),
-                                child: RotatedBox(
-                                  quarterTurns: 1,
-                                  child: CubeTaskView(
-                                    task: task,
-                                    color: Colors.primaries[
-                                        index % Colors.primaries.length],
-                                  ),
-                                )),
-                          );
-                        },
-                      )),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Align(
-                  alignment: Alignment.centerRight,
-                  child: IntrinsicHeight(
-                    child: Container(
-                        constraints:
-                            BoxConstraints(maxWidth: constraints.maxWidth / 3),
-                        child: RotatedBox(
-                          quarterTurns: 3,
-                          child: ScrollablePath(
-                            path: board.done,
-                            onTaskTapped: (value) {},
-                            builder:
-                                (BuildContext context, Task task, int index) {
-                              return GestureDetector(
-                                onTap: () {},
-                                child: Padding(
-                                  padding: const EdgeInsets.all(4.0),
-                                  child: CircleTaskView(
-                                    task: task,
-                                    color: Colors.primaries[
-                                        index % Colors.primaries.length],
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                        )),
-                  ),
-                ),
-              ),
-              Align(
-                alignment: Alignment.bottomLeft,
-                child: Padding(
-                  padding: const EdgeInsets.only(bottom: 32.0),
-                  child: NewPath(
-                    pathCreated: (value) {},
-                  ),
-                ),
-              )
+              _buildTodoPaths(constraints),
+              _buildInProgressPath(constraints),
+              _buildDonePath(constraints),
+              _buildNewPath()
             ],
           );
         },
+      ),
+    );
+  }
+
+  Align _buildNewPath() {
+    return Align(
+      alignment: Alignment.bottomLeft,
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 32.0),
+        child: NewPath(
+          pathCreated: (value) {},
+        ),
+      ),
+    );
+  }
+
+  Padding _buildDonePath(BoxConstraints constraints) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: IntrinsicHeight(
+          child: Container(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+              child: RotatedBox(
+                quarterTurns: 3,
+                child: ScrollablePath(
+                  path: board.done,
+                  onTaskTapped: (value) {},
+                  builder: (BuildContext context, Task task, int index) {
+                    return GestureDetector(
+                      onTap: () {},
+                      child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: CircleTaskView(
+                          task: task,
+                          color:
+                              Colors.primaries[index % Colors.primaries.length],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              )),
+        ),
+      ),
+    );
+  }
+
+  Padding _buildInProgressPath(BoxConstraints constraints) {
+    return Padding(
+      padding: const EdgeInsets.all(8.0),
+      child: Align(
+        alignment: Alignment.center,
+        child: Container(
+            constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+            child: StackedPath(
+              path: board.inProgress,
+              builder: (BuildContext context, Task task, int index) {
+                return GestureDetector(
+                  onTap: () {
+                    setState(() {
+                      board.inProgress.tasks.remove(task);
+                      board.done.tasks.add(task);
+                    });
+                  },
+                  child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: RotatedBox(
+                        quarterTurns: 1,
+                        child: CubeTaskView(
+                          task: task,
+                          color:
+                              Colors.primaries[index % Colors.primaries.length],
+                        ),
+                      )),
+                );
+              },
+            )),
+      ),
+    );
+  }
+
+  Container _buildTodoPaths(BoxConstraints constraints) {
+    return Container(
+      constraints: constraints.copyWith(maxWidth: constraints.maxWidth / 3),
+      child: IntrinsicWidth(
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (var path in board.paths)
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: MutablePath(
+                    path: path,
+                    builder: (context, taks, index) {
+                      return GestureDetector(
+                        child: RotatedBox(
+                          quarterTurns: 3,
+                          child: Padding(
+                            padding: const EdgeInsets.all(4.0),
+                            child: TitleTaskView(
+                              task: taks,
+                              color: Colors.pink,
+                            ),
+                          ),
+                        ),
+                        onTap: () {
+                          setState(() {
+                            path.tasks.remove(taks);
+                            board.inProgress.tasks.add(taks);
+                          });
+                        },
+                      );
+                    },
+                    onTaskCreated: (Task value) {
+                      setState(() {
+                        path.tasks.add(value);
+                      });
+                    },
+                  ),
+                ),
+            ],
+          ),
+        ),
       ),
     );
   }
