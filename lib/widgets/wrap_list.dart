@@ -3,7 +3,10 @@ import 'package:flutter/material.dart';
 class HorizontalWrapList extends StatelessWidget {
   final List<Widget> children;
   final Widget leading;
-  const HorizontalWrapList({Key key, this.leading, @required this.children})
+  final ScrollController controller;
+
+  const HorizontalWrapList(
+      {Key key, this.leading, @required this.children, this.controller})
       : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -14,6 +17,7 @@ class HorizontalWrapList extends StatelessWidget {
           Expanded(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               SingleChildScrollView(
+                controller: controller,
                 scrollDirection: Axis.horizontal,
                 child: IntrinsicHeight(
                   child: Row(
@@ -32,9 +36,11 @@ class HorizontalWrapList extends StatelessWidget {
 }
 
 class VerticalWrapList extends StatelessWidget {
+  final ScrollController controller;
   final List<Widget> children;
   final Widget leading;
-  const VerticalWrapList({Key key, this.leading, @required this.children})
+  const VerticalWrapList(
+      {Key key, this.leading, @required this.children, this.controller})
       : super(key: key);
   @override
   Widget build(BuildContext context) {
@@ -44,6 +50,7 @@ class VerticalWrapList extends StatelessWidget {
           Expanded(
             child: Column(mainAxisSize: MainAxisSize.min, children: [
               SingleChildScrollView(
+                controller: controller,
                 scrollDirection: Axis.vertical,
                 child: IntrinsicHeight(
                   child: Column(
