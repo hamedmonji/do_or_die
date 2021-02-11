@@ -45,6 +45,7 @@ class _MutablePathState extends State<MutablePath>
                 child: Center(
                   child: MorphInput(
                     style: TextStyle(fontSize: 14),
+                    persitent: true,
                     expandedColor: Colors.primaries[
                         (widget.path.tasks.length + 1) %
                             Colors.primaries.length],
