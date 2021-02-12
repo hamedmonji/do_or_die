@@ -50,29 +50,30 @@ class BoardData {
 class PathData {
   final String name;
   List<Task> tasks;
+  final bool expanded;
 
-  PathData(this.name, {this.tasks}) {
+  PathData(this.name, {this.tasks, this.expanded = true}) {
     if (tasks == null) tasks = [];
   }
 
   PathData.fromJson(Map<String, dynamic> json)
       : name = json['name'],
+        expanded = json['expanded'] ?? true,
         tasks = (json['tasks'] as List<dynamic>)
             .map((task) => Task.fromJson(task))
             .toList();
 
   Map<String, dynamic> toJson() {
-    return {
-      'name': name,
-      'tasks': tasks,
-    };
+    return {'name': name, 'tasks': tasks, 'expanded': expanded};
   }
 
   PathData.inProgress()
       : name = 'in progress',
+        expanded = true,
         tasks = [];
   PathData.done()
       : name = 'done',
+        expanded = true,
         tasks = [];
 }
 
