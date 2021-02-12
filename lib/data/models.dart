@@ -52,7 +52,7 @@ class PathData {
   List<Task> tasks;
   final PathStyle style;
 
-  PathData(this.name, {this.tasks, this.style}) {
+  PathData(this.name, {this.tasks, this.style = const PathStyle()}) {
     if (tasks == null) tasks = [];
   }
 
