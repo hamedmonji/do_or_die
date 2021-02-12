@@ -23,24 +23,44 @@ class _BoardState extends State<Board> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return Stack(
-            children: [
-              Container(
-                decoration: BoxDecoration(
-                    image: DecorationImage(
-                        image: AssetImage("images/background.jpg"),
-                        fit: BoxFit.cover)),
-              ),
-              _buildTodoPaths(constraints),
-              _buildInProgressPath(constraints),
-              _buildDonePath(constraints),
-              _buildNewPath()
-            ],
-          );
-        },
+    return GestureDetector(
+      onSecondaryTapUp: (details) {
+        final x = details.globalPosition.dx;
+        final y = details.globalPosition.dy;
+        showMenu(
+            context: context,
+            position: RelativeRect.fromLTRB(x, y, x + 100, y + 40),
+            items: [
+              PopupMenuItem(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    _saveBoard();
+                  },
+                  child: Text("Save"),
+                ),
+              )
+            ]);
+      },
+      child: Scaffold(
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return Stack(
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                      image: DecorationImage(
+                          image: AssetImage("images/background.jpg"),
+                          fit: BoxFit.cover)),
+                ),
+                _buildTodoPaths(constraints),
+                _buildInProgressPath(constraints),
+                _buildDonePath(constraints),
+                _buildNewPath()
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -142,9 +162,10 @@ class _BoardState extends State<Board> {
                 padding: const EdgeInsets.symmetric(vertical: 4),
                 child: Container(
                   constraints: constraints.copyWith(
-                      maxWidth: path.expanded ? constraints.maxWidth / 3 : 70),
+                      maxWidth:
+                          path.style.expanded ? constraints.maxWidth / 3 : 70),
                   child: GestureDetector(
-                    child: path.expanded
+                    child: path.style.expanded
                         ? MutablePath(
                             path: path,
                             builder: (context, taks, index) {
@@ -153,10 +174,14 @@ class _BoardState extends State<Board> {
                                   quarterTurns: 3,
                                   child: Padding(
                                     padding: const EdgeInsets.all(4.0),
-                                    child: CircleTaskView(
-                                      task: taks,
-                                      color: Colors.pink,
-                                    ),
+                                    child: path.style.view == TaskView.circle
+                                        ? CircleTaskView(
+                                            task: taks,
+                                            color: Colors.pink,
+                                          )
+                                        : TitleTaskView(
+                                            task: taks,
+                                          ),
                                   ),
                                 ),
                                 onTap: () {
@@ -176,7 +201,11 @@ class _BoardState extends State<Board> {
                         : GestureDetector(
                             onTap: () {
                               setState(() {
-                                toggleExpanded(path);
+                                updatePathStyle(
+                                    path,
+                                    PathStyle(
+                                        expanded: !path.style.expanded,
+                                        view: path.style.view));
                               });
                             },
                             child: HiddenPath(path: path),
@@ -188,17 +217,53 @@ class _BoardState extends State<Board> {
                           context: context,
                           position:
                               RelativeRect.fromLTRB(x, y, x + 100, y + 40),
-                          items: [
+                          items: <PopupMenuEntry>[
                             PopupMenuItem(
                               child: ElevatedButton(
                                 onPressed: () {
-                                  setState(() {
-                                    toggleExpanded(path);
-                                    Navigator.pop(context);
-                                  });
+                                  updatePathStyle(
+                                      path,
+                                      PathStyle(
+                                          expanded: !path.style.expanded,
+                                          view: path.style.view));
+                                  Navigator.pop(context);
                                 },
-                                child:
-                                    Text(path.expanded ? "Minimize" : "Expand"),
+                                child: Text(path.style.expanded
+                                    ? "Minimize"
+                                    : "Expand"),
+                              ),
+                            ),
+                            PopupMenuItem(
+                              child: PopupMenuButton(
+                                itemBuilder: (BuildContext context) {
+                                  return [
+                                    PopupMenuItem(
+                                        child: ElevatedButton(
+                                      child: Text("Circle"),
+                                      onPressed: () {
+                                        updatePathStyle(
+                                            path,
+                                            PathStyle(
+                                                expanded: path.style.expanded,
+                                                view: TaskView.circle));
+                                        Navigator.pop(context);
+                                      },
+                                    )),
+                                    PopupMenuItem(
+                                        child: ElevatedButton(
+                                      child: Text("Title"),
+                                      onPressed: () {
+                                        updatePathStyle(
+                                            path,
+                                            PathStyle(
+                                                expanded: path.style.expanded,
+                                                view: TaskView.title));
+                                        Navigator.pop(context);
+                                      },
+                                    ))
+                                  ];
+                                },
+                                child: Text("Task Style"),
                               ),
                             )
                           ]);
@@ -212,11 +277,13 @@ class _BoardState extends State<Board> {
     );
   }
 
-  void toggleExpanded(PathData path) {
-    final index = board.paths.indexOf(path);
-    board.paths.removeAt(index);
-    board.paths.insert(index,
-        PathData(path.name, tasks: path.tasks, expanded: !path.expanded));
+  void updatePathStyle(PathData path, PathStyle newStyle) {
+    setState(() {
+      final index = board.paths.indexOf(path);
+      board.paths.removeAt(index);
+      board.paths.insert(
+          index, PathData(path.name, tasks: path.tasks, style: newStyle));
+    });
   }
 
   void _saveBoard() async {
