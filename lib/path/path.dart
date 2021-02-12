@@ -167,7 +167,8 @@ class TitleTaskView extends StatelessWidget {
   final Task task;
   final Color color;
 
-  const TitleTaskView({Key key, this.task, this.color}) : super(key: key);
+  const TitleTaskView({Key key, @required this.task, this.color})
+      : super(key: key);
   @override
   Widget build(BuildContext context) {
     return Container(
