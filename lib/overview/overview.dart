@@ -85,7 +85,7 @@ class _BoardsOverViewState extends State<BoardsOverView> {
 
   Future<AppData> _createBoard(String value) async {
     return await addBoard(
-        BoardData(value, [], PathData.inProgress(), PathData.done()));
+        BoardData(value, [PathData.inProgress(), PathData.done()]));
   }
 }
 

@@ -24,25 +24,19 @@ class AppData {
 class BoardData {
   final String name;
   final List<PathData> paths;
-  final PathData inProgress;
-  final PathData done;
 
-  BoardData(this.name, this.paths, this.inProgress, this.done);
+  BoardData(this.name, this.paths);
 
   BoardData.fromJson(Map<String, dynamic> json)
       : name = json['name'],
         paths = (json['paths'] as List<dynamic>)
             .map((path) => PathData.fromJson(path))
-            .toList(),
-        inProgress = PathData.fromJson(json['inProgress']),
-        done = PathData.fromJson(json['done']);
+            .toList();
 
   Map<String, dynamic> toJson() {
     return {
       'name': name,
       'paths': paths,
-      'inProgress': inProgress,
-      'done': done,
     };
   }
 }
@@ -51,31 +45,38 @@ class PathData {
   final String name;
   List<Task> tasks;
   final PathStyle style;
+  final PathKind kind;
 
-  PathData(this.name, {this.tasks, this.style = const PathStyle()}) {
+  PathData(this.name,
+      {this.tasks, this.style = const PathStyle(), this.kind = PathKind.todo}) {
     if (tasks == null) tasks = [];
   }
 
   PathData.fromJson(Map<String, dynamic> json)
       : name = json['name'],
         style = PathStyle.fromJson(json['style']) ?? PathStyle(),
+        kind = PathKind.values[json['kind']],
         tasks = (json['tasks'] as List<dynamic>)
             .map((task) => Task.fromJson(task))
             .toList();
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'tasks': tasks, 'style': style};
+    return {'name': name, 'tasks': tasks, 'style': style, 'kind': kind.index};
   }
 
   PathData.inProgress({PathStyle style = const PathStyle()})
       : name = 'in progress',
         style = style,
+        kind = PathKind.inProgress,
         tasks = [];
   PathData.done({PathStyle style = const PathStyle()})
       : name = 'done',
         style = style,
+        kind = PathKind.done,
         tasks = [];
 }
+
+enum PathKind { todo, inProgress, done }
 
 class PathStyle {
   final bool expanded;

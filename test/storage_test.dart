@@ -5,17 +5,14 @@ void main() {
   test('save app data', () async {
     final data = AppData([
       BoardData(
-          'Weekly topics',
-          [
-            PathData('week one',
-                tasks: [Task('git intro'), Task('git branches')]),
-          ],
-          PathData('in progress', tasks: [
-            Task(
-              'git mastering',
-            )
-          ]),
-          PathData('done'))
+        'Weekly topics',
+        [
+          PathData('week one',
+              tasks: [Task('git intro'), Task('git branches')]),
+          PathData.inProgress(),
+          PathData.done()
+        ],
+      )
     ]);
 
     final dataJson = await data.json();

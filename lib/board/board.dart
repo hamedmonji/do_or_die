@@ -93,7 +93,8 @@ class _BoardState extends State<Board> {
               child: RotatedBox(
                 quarterTurns: 3,
                 child: ScrollablePath(
-                  path: board.done,
+                  path: board.paths
+                      .firstWhere((path) => path.kind == PathKind.done),
                   onTaskTapped: (value) {},
                   builder: (BuildContext context, Task task, int index) {
                     return GestureDetector(
@@ -115,37 +116,40 @@ class _BoardState extends State<Board> {
     );
   }
 
-  Padding _buildInProgressPath(BoxConstraints constraints) {
-    return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Align(
-        alignment: Alignment.center,
-        child: Container(
-            constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
-            child: StackedPath(
-              path: board.inProgress,
-              builder: (BuildContext context, Task task, int index) {
-                return GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      board.inProgress.tasks.remove(task);
-                      board.done.tasks.add(task);
-                    });
-                  },
-                  child: Padding(
-                      padding: const EdgeInsets.all(4.0),
-                      child: RotatedBox(
-                        quarterTurns: 1,
-                        child: CubeTaskView(
-                          task: task,
-                          color:
-                              Colors.primaries[index % Colors.primaries.length],
-                        ),
-                      )),
-                );
-              },
-            )),
+  Widget _buildInProgressPath(BoxConstraints constraints) {
+    final inProgressPath =
+        board.paths.firstWhere((path) => path.kind == PathKind.inProgress);
+    return GestureDetector(
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Align(
+          alignment: Alignment.center,
+          child: Container(
+              constraints: BoxConstraints(maxWidth: constraints.maxWidth / 3),
+              child: StackedPath(
+                path: inProgressPath,
+                builder: (BuildContext context, Task task, int index) {
+                  return GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        inProgressPath.tasks.remove(task);
+                        board.paths
+                            .firstWhere((path) => path.kind == PathKind.done)
+                            .tasks
+                            .add(task);
+                      });
+                    },
+                    child: Padding(
+                        padding: const EdgeInsets.all(4.0),
+                        child: _buildTaskView(inProgressPath, task)),
+                  );
+                },
+              )),
+        ),
       ),
+      onSecondaryTapUp: (details) {
+        _showPathMenu(details, inProgressPath);
+      },
     );
   }
 
@@ -156,7 +160,8 @@ class _BoardState extends State<Board> {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          for (var path in board.paths)
+          for (var path
+              in board.paths.where((path) => path.kind == PathKind.todo))
             IntrinsicWidth(
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 4),
@@ -174,20 +179,17 @@ class _BoardState extends State<Board> {
                                   quarterTurns: 3,
                                   child: Padding(
                                     padding: const EdgeInsets.all(4.0),
-                                    child: path.style.view == TaskView.circle
-                                        ? CircleTaskView(
-                                            task: taks,
-                                            color: Colors.pink,
-                                          )
-                                        : TitleTaskView(
-                                            task: taks,
-                                          ),
+                                    child: _buildTaskView(path, taks),
                                   ),
                                 ),
                                 onTap: () {
                                   setState(() {
                                     path.tasks.remove(taks);
-                                    board.inProgress.tasks.add(taks);
+                                    board.paths
+                                        .firstWhere((path) =>
+                                            path.kind == PathKind.todo)
+                                        .tasks
+                                        .add(taks);
                                   });
                                 },
                               );
@@ -211,62 +213,7 @@ class _BoardState extends State<Board> {
                             child: HiddenPath(path: path),
                           ),
                     onSecondaryTapUp: (details) {
-                      final x = details.globalPosition.dx;
-                      final y = details.globalPosition.dy;
-                      showMenu(
-                          context: context,
-                          position:
-                              RelativeRect.fromLTRB(x, y, x + 100, y + 40),
-                          items: <PopupMenuEntry>[
-                            PopupMenuItem(
-                              child: ElevatedButton(
-                                onPressed: () {
-                                  updatePathStyle(
-                                      path,
-                                      PathStyle(
-                                          expanded: !path.style.expanded,
-                                          view: path.style.view));
-                                  Navigator.pop(context);
-                                },
-                                child: Text(path.style.expanded
-                                    ? "Minimize"
-                                    : "Expand"),
-                              ),
-                            ),
-                            PopupMenuItem(
-                              child: PopupMenuButton(
-                                itemBuilder: (BuildContext context) {
-                                  return [
-                                    PopupMenuItem(
-                                        child: ElevatedButton(
-                                      child: Text("Circle"),
-                                      onPressed: () {
-                                        updatePathStyle(
-                                            path,
-                                            PathStyle(
-                                                expanded: path.style.expanded,
-                                                view: TaskView.circle));
-                                        Navigator.pop(context);
-                                      },
-                                    )),
-                                    PopupMenuItem(
-                                        child: ElevatedButton(
-                                      child: Text("Title"),
-                                      onPressed: () {
-                                        updatePathStyle(
-                                            path,
-                                            PathStyle(
-                                                expanded: path.style.expanded,
-                                                view: TaskView.title));
-                                        Navigator.pop(context);
-                                      },
-                                    ))
-                                  ];
-                                },
-                                child: Text("Task Style"),
-                              ),
-                            )
-                          ]);
+                      _showPathMenu(details, path);
                     },
                   ),
                 ),
@@ -277,12 +224,80 @@ class _BoardState extends State<Board> {
     );
   }
 
+  StatelessWidget _buildTaskView(PathData path, Task task) {
+    return path.style.view == TaskView.circle
+        ? CircleTaskView(
+            task: task,
+            color: Colors.pink,
+          )
+        : TitleTaskView(
+            task: task,
+          );
+  }
+
+  void _showPathMenu(TapUpDetails details, PathData path) {
+    final x = details.globalPosition.dx;
+    final y = details.globalPosition.dy;
+    showMenu(
+        context: context,
+        position: RelativeRect.fromLTRB(x, y, x + 100, y + 40),
+        items: <PopupMenuEntry>[
+          PopupMenuItem(
+            child: ElevatedButton(
+              onPressed: () {
+                updatePathStyle(
+                    path,
+                    PathStyle(
+                        expanded: !path.style.expanded, view: path.style.view));
+                Navigator.pop(context);
+              },
+              child: Text(path.style.expanded ? "Minimize" : "Expand"),
+            ),
+          ),
+          PopupMenuItem(
+            child: PopupMenuButton(
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem(
+                      child: ElevatedButton(
+                    child: Text("Circle"),
+                    onPressed: () {
+                      updatePathStyle(
+                          path,
+                          PathStyle(
+                              expanded: path.style.expanded,
+                              view: TaskView.circle));
+                      Navigator.pop(context);
+                    },
+                  )),
+                  PopupMenuItem(
+                      child: ElevatedButton(
+                    child: Text("Title"),
+                    onPressed: () {
+                      updatePathStyle(
+                          path,
+                          PathStyle(
+                              expanded: path.style.expanded,
+                              view: TaskView.title));
+                      Navigator.pop(context);
+                    },
+                  ))
+                ];
+              },
+              child: Text("Task Style"),
+            ),
+          )
+        ]);
+  }
+
   void updatePathStyle(PathData path, PathStyle newStyle) {
     setState(() {
       final index = board.paths.indexOf(path);
       board.paths.removeAt(index);
       board.paths.insert(
-          index, PathData(path.name, tasks: path.tasks, style: newStyle));
+          index,
+          PathData(path.name,
+              kind: path.kind, tasks: path.tasks, style: newStyle));
     });
   }
 
