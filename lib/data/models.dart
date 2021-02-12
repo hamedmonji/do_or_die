@@ -50,32 +50,52 @@ class BoardData {
 class PathData {
   final String name;
   List<Task> tasks;
-  final bool expanded;
+  final PathStyle style;
 
-  PathData(this.name, {this.tasks, this.expanded = true}) {
+  PathData(this.name, {this.tasks, this.style}) {
     if (tasks == null) tasks = [];
   }
 
   PathData.fromJson(Map<String, dynamic> json)
       : name = json['name'],
-        expanded = json['expanded'] ?? true,
+        style = PathStyle.fromJson(json['style']) ?? PathStyle(),
         tasks = (json['tasks'] as List<dynamic>)
             .map((task) => Task.fromJson(task))
             .toList();
 
   Map<String, dynamic> toJson() {
-    return {'name': name, 'tasks': tasks, 'expanded': expanded};
+    return {'name': name, 'tasks': tasks, 'style': style};
   }
 
-  PathData.inProgress()
+  PathData.inProgress({PathStyle style = const PathStyle()})
       : name = 'in progress',
-        expanded = true,
+        style = style,
         tasks = [];
-  PathData.done()
+  PathData.done({PathStyle style = const PathStyle()})
       : name = 'done',
-        expanded = true,
+        style = style,
         tasks = [];
 }
+
+class PathStyle {
+  final bool expanded;
+  final TaskView view;
+
+  const PathStyle({this.expanded = true, this.view = TaskView.circle});
+
+  PathStyle.fromJson(Map<String, dynamic> json)
+      : expanded = json['expanded'],
+        view = TaskView.values[json['view']];
+
+  Map<String, dynamic> toJson() {
+    return {
+      'expanded': expanded,
+      'view': view.index,
+    };
+  }
+}
+
+enum TaskView { circle, title }
 
 class Task {
   final String name;
