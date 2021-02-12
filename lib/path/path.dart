@@ -73,7 +73,7 @@ class _MutablePathState extends State<MutablePath>
   }
 
   List<Widget> getTasks() {
-    return path.tasks.asMap().entries.map<Widget>((e) {
+    return path.tasks.reversed.toList().asMap().entries.map<Widget>((e) {
       final index = e.key;
       final task = e.value;
       return widget.builder(context, task, index);
