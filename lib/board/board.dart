@@ -2,6 +2,7 @@ import 'dart:ui';
 
 import 'package:do_or_die/data/database.dart';
 import 'package:do_or_die/data/models.dart';
+import 'package:do_or_die/widgets/blur.dart';
 import 'package:flutter/material.dart';
 import 'package:do_or_die/path/path.dart';
 
@@ -50,7 +51,12 @@ class _BoardState extends State<Board> {
       child: Padding(
         padding: const EdgeInsets.only(bottom: 32.0),
         child: NewPath(
-          pathCreated: (value) {},
+          pathCreated: (value) {
+            setState(() {
+              board.paths.add(PathData(value));
+              print(board.paths);
+            });
+          },
         ),
       ),
     );
@@ -123,57 +129,129 @@ class _BoardState extends State<Board> {
     );
   }
 
-  Container _buildTodoPaths(BoxConstraints constraints) {
-    return Container(
-      constraints: constraints.copyWith(maxWidth: constraints.maxWidth / 3),
-      child: IntrinsicWidth(
-        child: Align(
-          alignment: Alignment.centerLeft,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (var path in board.paths)
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: MutablePath(
-                    path: path,
-                    builder: (context, taks, index) {
-                      return GestureDetector(
-                        child: RotatedBox(
-                          quarterTurns: 3,
-                          child: Padding(
-                            padding: const EdgeInsets.all(4.0),
-                            child: TitleTaskView(
-                              task: taks,
-                              color: Colors.pink,
-                            ),
+  Widget _buildTodoPaths(BoxConstraints constraints) {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          for (var path in board.paths)
+            IntrinsicWidth(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 4),
+                child: Container(
+                  constraints: constraints.copyWith(
+                      maxWidth: path.expanded ? constraints.maxWidth / 3 : 70),
+                  child: GestureDetector(
+                    child: path.expanded
+                        ? MutablePath(
+                            path: path,
+                            builder: (context, taks, index) {
+                              return GestureDetector(
+                                child: RotatedBox(
+                                  quarterTurns: 3,
+                                  child: Padding(
+                                    padding: const EdgeInsets.all(4.0),
+                                    child: CircleTaskView(
+                                      task: taks,
+                                      color: Colors.pink,
+                                    ),
+                                  ),
+                                ),
+                                onTap: () {
+                                  setState(() {
+                                    path.tasks.remove(taks);
+                                    board.inProgress.tasks.add(taks);
+                                  });
+                                },
+                              );
+                            },
+                            onTaskCreated: (Task value) {
+                              setState(() {
+                                path.tasks.add(value);
+                              });
+                            },
+                          )
+                        : GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                toggleExpanded(path);
+                              });
+                            },
+                            child: HiddenPath(path: path),
                           ),
-                        ),
-                        onTap: () {
-                          setState(() {
-                            path.tasks.remove(taks);
-                            board.inProgress.tasks.add(taks);
-                          });
-                        },
-                      );
-                    },
-                    onTaskCreated: (Task value) {
-                      setState(() {
-                        path.tasks.add(value);
-                      });
+                    onSecondaryTapUp: (details) {
+                      final x = details.globalPosition.dx;
+                      final y = details.globalPosition.dy;
+                      showMenu(
+                          context: context,
+                          position:
+                              RelativeRect.fromLTRB(x, y, x + 100, y + 40),
+                          items: [
+                            PopupMenuItem(
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    toggleExpanded(path);
+                                    Navigator.pop(context);
+                                  });
+                                },
+                                child:
+                                    Text(path.expanded ? "Minimize" : "Expand"),
+                              ),
+                            )
+                          ]);
                     },
                   ),
                 ),
-            ],
-          ),
-        ),
+              ),
+            ),
+        ],
       ),
     );
+  }
+
+  void toggleExpanded(PathData path) {
+    final index = board.paths.indexOf(path);
+    board.paths.removeAt(index);
+    board.paths.insert(index,
+        PathData(path.name, tasks: path.tasks, expanded: !path.expanded));
   }
 
   void _saveBoard() async {
     print('save board');
     updateBoard(board);
+  }
+}
+
+class HiddenPath extends StatelessWidget {
+  const HiddenPath({
+    Key key,
+    @required this.path,
+  }) : super(key: key);
+
+  final PathData path;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      clipBehavior: Clip.antiAlias,
+      child: Blur(
+          child: RotatedBox(
+        quarterTurns: 3,
+        child: Padding(
+          padding: const EdgeInsets.all(12.0),
+          child: Text(
+            path.name,
+            style: TextStyle(fontSize: 14),
+          ),
+        ),
+      )),
+      decoration: BoxDecoration(
+          borderRadius: BorderRadius.only(
+              topRight: Radius.circular(24), bottomRight: Radius.circular(24))),
+    );
   }
 }
 
@@ -187,16 +265,15 @@ class NewPath extends StatefulWidget {
   }) : super(key: key);
 
   @override
-  _NewPathState createState() => _NewPathState(pathCreated);
+  _NewPathState createState() => _NewPathState();
 }
 
 class _NewPathState extends State<NewPath>
     with SingleTickerProviderStateMixin<NewPath> {
   bool _addPath = false;
   FocusNode focusNode = FocusNode();
-  final ValueChanged<String> pathCreated;
 
-  _NewPathState(this.pathCreated);
+  _NewPathState();
 
   @override
   Widget build(BuildContext context) {
@@ -263,7 +340,7 @@ class _NewPathState extends State<NewPath>
                                       focusNode: focusNode,
                                       onSubmitted: (value) {
                                         if (value != null && value.isNotEmpty) {
-                                          pathCreated(value);
+                                          widget.pathCreated(value);
                                         }
                                         setState(() {
                                           _addPath = false;
