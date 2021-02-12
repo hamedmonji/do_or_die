@@ -5,6 +5,7 @@ import 'package:do_or_die/data/models.dart';
 import 'package:do_or_die/widgets/blur.dart';
 import 'package:do_or_die/widgets/morph_input.dart';
 import 'package:do_or_die/widgets/wrap_list.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 
@@ -29,16 +30,20 @@ class MutablePath extends StatefulWidget {
 class _MutablePathState extends State<MutablePath>
     with SingleTickerProviderStateMixin {
   final PathData path;
-
+  final ScrollController scrollController = ScrollController();
   _MutablePathState(this.path);
 
   @override
   Widget build(BuildContext context) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      scrollController.jumpTo(scrollController.position.maxScrollExtent);
+    });
     return Container(
       clipBehavior: Clip.antiAlias,
       child: Blur(
         child: Container(
           child: HorizontalWrapList(
+              controller: scrollController,
               leading: Padding(
                 padding: const EdgeInsets.only(
                     left: 12.0, right: 8, top: 8, bottom: 8),
@@ -145,6 +150,7 @@ class ScrollablePath extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: Blur(
           child: HorizontalWrapList(
+        controller: _controller,
         children: path.tasks.asMap().entries.map((e) {
           final index = e.key;
           final task = e.value;
